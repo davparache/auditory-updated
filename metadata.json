@@ -1,0 +1,8 @@
+{
+  "name": "Copy of DVP- Ad",
+  "description": "A high-performance, glass-morphism inventory management system with Gemini AI integration for smart stock analysis and auditing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
