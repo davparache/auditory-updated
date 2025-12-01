@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Parache Technologies</title>
+    <title>PARACHE DEV</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
     
     <!-- Polyfill for process.env -->
     <script>
@@ -25,18 +26,20 @@
 
     <style>
       :root {
-        --ios-bg: #000000;
-        --ios-card: #1C1C1E;
-        --ios-separator: #38383A;
-        --ios-blue: #0A84FF;
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-bg: rgba(20, 20, 23, 0.6);
+        --neon-blue: #0A84FF;
       }
 
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-        background-color: var(--ios-bg);
+        /* Deep futuristic background */
+        background: radial-gradient(circle at 50% 0%, #1e1e24 0%, #000000 80%);
+        background-attachment: fixed;
         color: #FFFFFF;
         -webkit-font-smoothing: antialiased;
-        overscroll-behavior-y: none; /* Prevent rubber-banding on body */
+        overscroll-behavior-y: none;
+        min-height: 100vh;
       }
 
       /* Hide Scrollbars globally for native feel */
@@ -46,6 +49,14 @@
       * {
         -ms-overflow-style: none;
         scrollbar-width: none;
+      }
+      
+      /* Utilities */
+      .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
       }
       
       /* Animations */
@@ -72,6 +83,22 @@
       .animate-scale-in {
         animation: scaleIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
       }
+
+      /* Glitch Flicker for Logo */
+      @keyframes flicker {
+        0% { opacity: 1; }
+        5% { opacity: 0.8; }
+        10% { opacity: 1; }
+        15% { opacity: 0.3; }
+        20% { opacity: 1; }
+        50% { opacity: 1; }
+        55% { opacity: 0.9; }
+        60% { opacity: 1; }
+        100% { opacity: 1; }
+      }
+      .logo-flicker {
+        animation: flicker 4s infinite alternate;
+      }
     </style>
   <script type="importmap">
 {
@@ -83,7 +110,8 @@
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
     "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
-    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2"
+    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2",
+    "html5-qrcode": "https://esm.sh/html5-qrcode@2.3.8"
   }
 }
 </script>

@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { AuditItem, InventoryItem } from '../types';
-import { ArrowLeft, Check, CheckCircle2, ScanBarcode } from 'lucide-react';
+import { ArrowLeft, Check, ScanBarcode, Camera, X, Zap } from 'lucide-react';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 interface AuditViewProps {
     items: InventoryItem[];
@@ -17,21 +18,33 @@ const AuditView: React.FC<AuditViewProps> = ({ items, zoneFilter, onFinish, onCa
             .map(i => ({ ...i, done: false }));
     });
     
+    // Create a Ref for auditList to allow the scanner callback to access latest state 
+    // without triggering a re-render/re-initialization of the camera.
+    const auditListRef = useRef(auditList);
+    useEffect(() => { auditListRef.current = auditList; }, [auditList]);
+
     const [input, setInput] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scannerError, setScannerError] = useState<string | null>(null);
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const isScannerRunning = useRef(false);
 
-    // Focus input on mount
+    // Focus input on mount or when scanner closes
     useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
+        if (!isScanning) {
+            inputRef.current?.focus();
+        }
+    }, [isScanning]);
 
-    const handleScan = (e: React.FormEvent) => {
-        e.preventDefault();
-        const code = input.trim().toUpperCase();
+    // Handle Logic for matching a code (used by both manual input and camera)
+    // We use a separate function for the Scanner that relies on the REF to avoid dependencies.
+    const processCode = useCallback((code: string) => {
         if (!code) return;
-
-        // Optimized lookup using findIndex
-        const targetIndex = auditList.findIndex(i => i.part === code);
+        
+        // Optimize lookup using the REF
+        const currentList = auditListRef.current;
+        const targetIndex = currentList.findIndex(i => i.part === code);
         
         if (targetIndex !== -1) {
             setAuditList(prev => {
@@ -40,11 +53,21 @@ const AuditView: React.FC<AuditViewProps> = ({ items, zoneFilter, onFinish, onCa
                 return newList;
             });
             setInput('');
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(200);
+            return true;
         } else {
-            // Using a simple alert for now, but a toast would be cleaner in a real app context
+            // Using a simple alert for now
             alert(`Item ${code} not found in selected zones.`);
             setInput('');
+            return false;
         }
+    }, []); // No dependencies needed because we use functional state update and Ref
+
+    const handleManualSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const code = input.trim().toUpperCase();
+        processCode(code);
     };
 
     const toggleItem = (part: string) => {
@@ -57,6 +80,88 @@ const AuditView: React.FC<AuditViewProps> = ({ items, zoneFilter, onFinish, onCa
         if (auditList.length === 0) return 0;
         return Math.round((auditList.filter(i => i.done).length / auditList.length) * 100);
     }, [auditList]);
+
+    // --- SCANNER EFFECT ---
+    // This effect should only re-run if isScanning changes, NOT if items change.
+    useEffect(() => {
+        let mounted = true;
+
+        const cleanupScanner = async () => {
+             if (scannerRef.current && isScannerRunning.current) {
+                try {
+                    await scannerRef.current.stop();
+                    scannerRef.current.clear();
+                } catch (e) {
+                    console.warn("Audit scanner cleanup error", e);
+                }
+                isScannerRunning.current = false;
+                scannerRef.current = null;
+            }
+        };
+
+        if (isScanning) {
+            const startScanner = async () => {
+                // Wait for DOM
+                await new Promise(r => setTimeout(r, 100));
+                if (!mounted) return;
+                
+                const element = document.getElementById("reader");
+                if (!element) return;
+
+                try {
+                    if (!scannerRef.current) {
+                        scannerRef.current = new Html5Qrcode("reader");
+                    }
+
+                    const config = {
+                        fps: 15, // Higher FPS for Code 128 detection
+                        qrbox: { width: 280, height: 150 }, // Wider box for linear barcodes
+                        aspectRatio: 1.0,
+                        // Configured specifically for CODE_128 as requested
+                        formatsToSupport: [
+                            Html5QrcodeSupportedFormats.CODE_128,
+                            Html5QrcodeSupportedFormats.CODE_39,
+                            Html5QrcodeSupportedFormats.QR_CODE
+                        ]
+                    };
+
+                    if (!isScannerRunning.current) {
+                        await scannerRef.current.start(
+                            { facingMode: "environment" },
+                            config,
+                            (decodedText) => {
+                                if (mounted) {
+                                    // STOP CAMERA ON SUCCESS
+                                    // This is usually better for battery and UX to verify the scan
+                                    cleanupScanner().then(() => {
+                                        setIsScanning(false);
+                                        processCode(decodedText.trim().toUpperCase());
+                                    });
+                                }
+                            },
+                            (errorMessage) => {
+                                // On Frame Error - ignore for UI cleanliness
+                            }
+                        );
+                        isScannerRunning.current = true;
+                    }
+                } catch (err: any) {
+                    console.error("Camera start failed", err);
+                    if (mounted) setScannerError(err?.message || "Camera not accessible");
+                    setIsScanning(false);
+                }
+            };
+            
+            startScanner();
+        } else {
+            cleanupScanner();
+        }
+
+        return () => {
+            mounted = false;
+            cleanupScanner();
+        };
+    }, [isScanning, processCode]); // processCode is now stable thanks to useCallback
 
     return (
         <div className="fixed inset-0 z-40 bg-gray-950 flex flex-col animate-fade-in">
@@ -79,21 +184,74 @@ const AuditView: React.FC<AuditViewProps> = ({ items, zoneFilter, onFinish, onCa
                 <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
             </div>
 
-            {/* Scanner Input */}
+            {/* Scanner Input Area */}
             <div className="p-4 bg-gray-900/50">
-                <form onSubmit={handleScan} className="relative">
-                    <ScanBarcode className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                    <input
-                        ref={inputRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-center font-mono text-xl text-white font-bold uppercase tracking-widest focus:outline-none focus:border-emerald-500 transition-all shadow-inner placeholder-gray-600"
-                        placeholder="SCAN BARCODE"
-                        autoFocus
-                        onBlur={() => setTimeout(() => inputRef.current?.focus(), 100)} // Keep focus
-                    />
-                </form>
+                <div className="relative flex gap-2">
+                    <form onSubmit={handleManualSubmit} className="relative flex-1">
+                        <ScanBarcode className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                        <input
+                            ref={inputRef}
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-center font-mono text-xl text-white font-bold uppercase tracking-widest focus:outline-none focus:border-emerald-500 transition-all shadow-inner placeholder-gray-600"
+                            placeholder="SCAN BARCODE"
+                            autoFocus
+                        />
+                    </form>
+                    
+                    {/* Camera Trigger */}
+                    <button 
+                        onClick={() => { setIsScanning(true); setScannerError(null); }}
+                        className="bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 w-16 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                    >
+                        <Camera size={24} />
+                    </button>
+                </div>
+                {scannerError && <p className="text-red-400 text-xs text-center mt-2">{scannerError}</p>}
             </div>
+
+            {/* CAMERA OVERLAY */}
+            {isScanning && (
+                <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-fade-in">
+                    
+                    {/* Camera Header */}
+                    <div className="absolute top-0 w-full p-6 flex justify-between items-start z-10 bg-gradient-to-b from-black/80 to-transparent">
+                         <div className="flex flex-col">
+                            <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                                <Zap className="text-yellow-400" size={18} fill="currentColor" />
+                                Scanner Active
+                            </h3>
+                            <p className="text-gray-300 text-xs">Point at Code 128 / QR</p>
+                         </div>
+                         <button 
+                            onClick={() => setIsScanning(false)}
+                            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md"
+                         >
+                             <X size={20} />
+                         </button>
+                    </div>
+
+                    {/* The HTML5-QRCode Scanner Element */}
+                    <div className="w-full max-w-md relative overflow-hidden rounded-3xl border-2 border-white/10 shadow-2xl bg-black">
+                        <div id="reader" className="w-full h-full min-h-[400px]"></div>
+                        
+                        {/* Visual Guide Overlay */}
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                            {/* Wide Rect for Barcodes */}
+                            <div className="w-72 h-40 border-2 border-emerald-500/50 rounded-lg relative shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+                                <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 -mt-0.5 -ml-0.5"></div>
+                                <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 -mt-0.5 -mr-0.5"></div>
+                                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400 -mb-0.5 -ml-0.5"></div>
+                                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400 -mb-0.5 -mr-0.5"></div>
+                                {/* Scanning Laser Line */}
+                                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] opacity-70 animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-gray-400 mt-8 text-sm animate-pulse">Scanning for part numbers...</p>
+                </div>
+            )}
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -119,25 +277,24 @@ const AuditView: React.FC<AuditViewProps> = ({ items, zoneFilter, onFinish, onCa
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-2xl font-light text-gray-200">{item.qty}</span>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${item.done ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-500'}`}>
-                                    {item.done ? <Check size={16} strokeWidth={3} /> : <div className="w-2 h-2 rounded-full bg-gray-600" />}
-                                </div>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-xl font-bold ${item.done ? 'text-emerald-400' : 'text-gray-500'}`}>
+                                    {item.qty}
+                                </span>
+                                {item.done && (
+                                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-scale-in">
+                                        <Check size={16} className="text-white" strokeWidth={3} />
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        {/* Background filler animation */}
-                         {item.done && (
-                            <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />
+                        
+                        {/* Progress bar background for checked items */}
+                        {item.done && (
+                             <div className="absolute inset-0 bg-emerald-500/5 z-0 transition-all duration-500"></div>
                         )}
                     </div>
                 ))}
-                
-                {auditList.length === 0 && (
-                    <div className="text-center text-gray-400 py-10">
-                        No items in selected zones.
-                    </div>
-                )}
             </div>
         </div>
     );

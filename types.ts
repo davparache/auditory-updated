@@ -1,3 +1,4 @@
+
 export interface InventoryItem {
     part: string;
     bin: string;
@@ -11,9 +12,15 @@ export interface AuditItem extends InventoryItem {
     done: boolean;
 }
 
-export interface ZoneGroup {
-    prefix: string;
-    zones: string[];
+// Optimized Hierarchy Structure for Pillar 2
+export interface ZoneHierarchy {
+    [groupKey: string]: {
+        label: string;
+        totalItems: number;
+        subgroups: {
+            [subKey: string]: string[]; // Array of specific Bin IDs
+        }
+    }
 }
 
 export type ModalType = 'EDITOR' | 'ZONES' | 'CONNECT' | 'GEMINI' | null;

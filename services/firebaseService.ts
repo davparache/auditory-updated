@@ -219,6 +219,35 @@ export const saveToCloud = async (sessionId: string, inventory: InventoryMap) =>
     }
 };
 
+export const updateSessionPin = async (sessionId: string, newPin: string) => {
+    if (!db || !sessionId) return false;
+    const docRef = getInventoryRef(sessionId);
+    if (!docRef) return false;
+
+    try {
+        // Force update the pin
+        await docRef.update({ adminPin: newPin });
+        return true;
+    } catch (e: any) {
+        // Fix: If document doesn't exist, Create it (Set) instead of failing to update
+        if (e.code === 'not-found' || e.message?.includes('No document')) {
+            try {
+                await docRef.set({ 
+                    adminPin: newPin,
+                    updated: new Date().toISOString(),
+                    json: '{}' // Initialize empty if creating from scratch
+                }, { merge: true });
+                return true;
+            } catch (innerE) {
+                console.error("Set PIN Error", innerE);
+                return false;
+            }
+        }
+        console.error("Update PIN Error", e);
+        return false;
+    }
+}
+
 export const disconnectFirebase = () => {
     if (unsubscribe) {
         unsubscribe();
