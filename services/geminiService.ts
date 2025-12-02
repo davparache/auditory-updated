@@ -2,13 +2,28 @@ import { GoogleGenAI } from "@google/genai";
 import { InventoryItem } from "../types";
 
 // Initialize the client
-// Safe access to process.env to prevent ReferenceError in browser if polyfill fails
-const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
+// Optimized for Vite (import.meta.env) and standard Node environments
+const getApiKey = () => {
+  // Cast to any to bypass TS checks on import.meta.env which might not be typed in all environments
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_API_KEY) {
+    return (import.meta as any).env.VITE_API_KEY;
+  }
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    return process.env.API_KEY;
+  }
+  // Fallback for polyfilled environments
+  if (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) {
+      return (window as any).process.env.API_KEY;
+  }
+  return '';
+};
+
+const apiKey = getApiKey();
 const ai = new GoogleGenAI({ apiKey });
 
 export const analyzeInventory = async (items: InventoryItem[]): Promise<string> => {
   if (!apiKey) {
-    return "API Key is missing. Please configure the environment variable.";
+    return "API Key is missing. Please check your .env file or configuration.";
   }
 
   try {
