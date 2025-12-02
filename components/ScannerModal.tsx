@@ -33,7 +33,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScan, ti
         };
 
         const startScanner = async () => {
-            // Wait for DOM
             await new Promise(r => setTimeout(r, 100));
             if (!mounted) return;
 
@@ -44,7 +43,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScan, ti
             }
 
             try {
-                // Initialize if not exists
                 if (!scannerRef.current) {
                     scannerRef.current = new Html5Qrcode(elementId);
                 }
@@ -67,16 +65,12 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScan, ti
                         config,
                         (decodedText) => {
                             if (mounted) {
-                                // Stop immediately upon success to prevent duplicate scans
                                 cleanup().then(() => {
                                     onScan(decodedText.trim().toUpperCase());
-                                    // onClose will be called by parent usually, but we ensure cleanup happens first
                                 });
                             }
                         },
-                        (errorMessage) => {
-                            // ignore frame errors
-                        }
+                        (errorMessage) => { }
                     );
                     isRunning.current = true;
                 }
@@ -104,48 +98,48 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScan, ti
 
     return (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
-             <div className="absolute top-0 w-full p-6 flex justify-between items-start z-10 bg-gradient-to-b from-black/80 to-transparent">
+             <div className="absolute top-0 w-full p-6 pt-12 flex justify-between items-start z-10 bg-gradient-to-b from-black/80 to-transparent">
                  <div className="flex flex-col">
                     <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                        <ScanBarcode className="text-[#0A84FF]" size={20} />
+                        <ScanBarcode className="text-[#bc13fe]" size={20} />
                         {title}
                     </h3>
-                    <p className="text-gray-300 text-xs">Align code within frame</p>
+                    <p className="text-gray-300 text-xs tracking-wider">ALIGN CODE WITHIN FRAME</p>
                  </div>
                  <button 
                     onClick={onClose}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-white/20 transition-colors"
+                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-white/20 transition-colors border border-white/10"
                  >
                      <X size={20} />
                  </button>
             </div>
 
-            <div className="w-full max-w-md relative overflow-hidden rounded-3xl border-2 border-white/10 shadow-2xl bg-black">
+            <div className="w-full max-w-md relative overflow-hidden rounded-[32px] border-2 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] bg-black">
                 <div id={elementId} className="w-full h-full min-h-[400px]"></div>
                 
                 {/* Visual Guide Overlay */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-64 h-32 border-2 border-[#0A84FF]/50 rounded-lg relative shadow-[0_0_50px_rgba(10,132,255,0.3)]">
-                        <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-[#0A84FF] -mt-0.5 -ml-0.5"></div>
-                        <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-[#0A84FF] -mt-0.5 -mr-0.5"></div>
-                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-[#0A84FF] -mb-0.5 -ml-0.5"></div>
-                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-[#0A84FF] -mb-0.5 -mr-0.5"></div>
+                    <div className="w-64 h-32 border-2 border-[#bc13fe] rounded-lg relative shadow-[0_0_30px_rgba(188,19,254,0.3)] bg-[#bc13fe]/5">
+                        <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-[#bc13fe] -mt-0.5 -ml-0.5"></div>
+                        <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-[#bc13fe] -mt-0.5 -mr-0.5"></div>
+                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-[#bc13fe] -mb-0.5 -ml-0.5"></div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-[#bc13fe] -mb-0.5 -mr-0.5"></div>
                         {/* Scanning Laser Line */}
-                        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] opacity-70 animate-pulse"></div>
+                        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-[#00f3ff] shadow-[0_0_15px_#00f3ff] opacity-80 animate-pulse"></div>
                     </div>
                 </div>
             </div>
             
-            <div className="mt-8 px-6 py-3 bg-white/5 rounded-full border border-white/5 backdrop-blur-md">
-                 <p className="text-gray-300 text-sm font-medium flex items-center gap-2">
-                    <Zap size={14} className="text-yellow-400" fill="currentColor" />
-                    Supports Code 128, Code 39, QR
+            <div className="mt-8 px-6 py-3 bg-white/5 rounded-full border border-white/5 backdrop-blur-md shadow-lg">
+                 <p className="text-gray-300 text-sm font-bold flex items-center gap-2">
+                    <Zap size={16} className="text-[#FFD60A]" fill="currentColor" />
+                    <span className="text-[10px] tracking-widest uppercase">Scanner Active</span>
                  </p>
             </div>
             
             {error && (
-                <div className="absolute bottom-10 px-6 py-3 bg-red-500/20 border border-red-500/50 rounded-xl">
-                    <p className="text-red-200 text-sm font-medium">{error}</p>
+                <div className="absolute bottom-10 px-6 py-3 bg-[#ff073a]/20 border border-[#ff073a]/50 rounded-xl">
+                    <p className="text-[#ff073a] text-sm font-bold">{error}</p>
                 </div>
             )}
         </div>
