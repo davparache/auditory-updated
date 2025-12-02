@@ -1,12 +1,18 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- PWA Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>PARACHE DEV</title>
+    <meta name="apple-mobile-web-app-title" content="ZEEVRA">
+    <meta name="theme-color" content="#141417">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/25/25694.png">
+
+    <title>ZEEVRA Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
     
@@ -14,7 +20,7 @@
     <script>
       window.process = {
         env: {
-          API_KEY: '' // This will be populated by the runtime environment if available, or stay empty to prevent crashes
+          API_KEY: '' // This will be populated by the runtime environment if available
         }
       };
     </script>
@@ -33,7 +39,6 @@
 
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-        /* Deep futuristic background */
         background: radial-gradient(circle at 50% 0%, #1e1e24 0%, #000000 80%);
         background-attachment: fixed;
         color: #FFFFFF;
@@ -42,13 +47,14 @@
         min-height: 100vh;
       }
 
-      /* Hide Scrollbars globally for native feel */
+      /* Hide Scrollbars globally */
       ::-webkit-scrollbar {
         display: none;
       }
       * {
         -ms-overflow-style: none;
         scrollbar-width: none;
+        -webkit-tap-highlight-color: transparent;
       }
       
       /* Utilities */
