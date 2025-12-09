@@ -1,5 +1,8 @@
 
 import { InventoryMap } from "../types";
+import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import "firebase/compat/firestore";
 
 // Firebase Configuration
 const FIREBASE_CONFIG = {
@@ -12,14 +15,7 @@ const FIREBASE_CONFIG = {
     measurementId: "G-PVCPL4VF1Z"
 };
 
-// Global type definition for window.firebase
-declare global {
-    interface Window {
-        firebase: any;
-    }
-}
-
-let db: any = null;
+let db: firebase.firestore.Firestore | null = null;
 let unsubscribe: (() => void) | null = null;
 
 // Helper to get the authorized document reference
@@ -34,11 +30,6 @@ export const initFirebase = async () => {
     // Prevent re-initialization if already loaded
     if (db) return true;
 
-    if (typeof window.firebase === 'undefined') {
-        console.error("Firebase SDK not loaded");
-        return false;
-    }
-
     // Quick check for network status
     if (!navigator.onLine) {
         console.log("Device offline: Skipping Firebase initialization");
@@ -46,14 +37,16 @@ export const initFirebase = async () => {
     }
 
     try {
-        if (!window.firebase.apps.length) {
-            window.firebase.initializeApp(FIREBASE_CONFIG);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(FIREBASE_CONFIG);
         }
-        const auth = window.firebase.auth();
-        db = window.firebase.firestore();
+        
+        // Initialize services
+        const auth = firebase.auth();
+        db = firebase.firestore();
         
         // Set persistence to LOCAL to avoid re-auth loops
-        await auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         // Anonymous sign in with Retry Logic
         if (!auth.currentUser) {
