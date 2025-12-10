@@ -11,8 +11,8 @@ const FIREBASE_CONFIG = {
     projectId: "auditory-a5f2f",
     storageBucket: "auditory-a5f2f.firebasestorage.app",
     messagingSenderId: "225421245808",
-    appId: "1:225421245808:web:e045291f6241bf1c1ae3b5",
-    measurementId: "G-PVCPL4VF1Z"
+    appId: "1:225421245808:web:35d18dc71dca68bb1ae3b5",
+    measurementId: "G-WP415YSLF1"
 };
 
 let db: firebase.firestore.Firestore | null = null;
@@ -22,7 +22,6 @@ let unsubscribe: (() => void) | null = null;
 const getInventoryRef = (sessionId: string) => {
     if (!db) return null;
     const safeId = sessionId.trim().replace(/[\/\.]/g, '_').toUpperCase();
-    // CHANGED: Use a simple root-level collection to avoid deep-nesting permission issues
     return db.collection('sessions').doc(safeId);
 };
 

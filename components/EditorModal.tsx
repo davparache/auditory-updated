@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { InventoryItem } from '../types';
-import { X, ScanBarcode, Trash2, Save, MapPin, Hash, Package } from 'lucide-react';
-import ScannerModal from './ScannerModal';
+import { X, ScanBarcode, Trash2, Save, MapPin, Hash, Package, AlertOctagon, FileText } from 'lucide-react';
+import ScannerModal from '../components/ScannerModal';
 
 interface EditorModalProps {
     isOpen: boolean;
@@ -18,7 +18,11 @@ const EditorModal: React.FC<EditorModalProps> = ({ isOpen, initialData, isNew, o
     const [showScanner, setShowScanner] = useState(false);
 
     useEffect(() => {
-        setFormData(initialData);
+        setFormData({
+            ...initialData,
+            bo: initialData.bo || 0,
+            description: initialData.description || ''
+        });
     }, [initialData, isOpen]);
 
     if (!isOpen) return null;
@@ -67,6 +71,18 @@ const EditorModal: React.FC<EditorModalProps> = ({ isOpen, initialData, isNew, o
                         </div>
                     </div>
 
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-1"><FileText size={10} /> Description</label>
+                        <input
+                            type="text"
+                            value={formData.description || ''}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="glass-input w-full px-4 py-3 rounded-xl text-sm"
+                            placeholder="Item description (optional)"
+                        />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Location</label>
@@ -82,7 +98,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ isOpen, initialData, isNew, o
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Qty</label>
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">On Hand (Qty)</label>
                             <input
                                 type="number"
                                 value={formData.qty}
@@ -90,6 +106,19 @@ const EditorModal: React.FC<EditorModalProps> = ({ isOpen, initialData, isNew, o
                                 className="glass-input w-full px-3 py-3 rounded-xl font-mono text-lg font-bold text-center"
                             />
                         </div>
+                    </div>
+
+                    {/* Back Order Section */}
+                    <div className="space-y-1.5 p-3 rounded-xl bg-red-900/10 border border-red-500/20">
+                         <label className="text-[10px] font-bold text-[#ff003c] uppercase tracking-widest ml-1 flex items-center gap-1">
+                             <AlertOctagon size={12} /> Back Order (Missing)
+                         </label>
+                         <input
+                            type="number"
+                            value={formData.bo}
+                            onChange={(e) => setFormData({ ...formData, bo: parseInt(e.target.value) || 0 })}
+                            className="glass-input w-full px-3 py-2 rounded-lg font-mono text-lg font-bold text-center text-[#ff003c] focus:border-[#ff003c]"
+                        />
                     </div>
 
                     <div className="pt-4 flex gap-3">

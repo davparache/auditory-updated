@@ -3,6 +3,8 @@ export interface InventoryItem {
     part: string;
     bin: string;
     qty: number;
+    bo: number; // Back Order Quantity
+    description?: string; // Optional description
     lastUpdated?: string;
 }
 

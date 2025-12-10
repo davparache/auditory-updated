@@ -143,7 +143,7 @@ const AuditView: React.FC<AuditViewProps> = ({ items, onFinish, onCancel }) => {
                             <div className="col-span-2 md:col-span-1 text-center">Check</div>
                             <div className="col-span-4 md:col-span-5">Part Number</div>
                             <div className="col-span-3 text-center">Bin</div>
-                            <div className="col-span-3 text-center">Sys Qty</div>
+                            <div className="col-span-3 text-center">Sys / B.O</div>
                         </div>
 
                         {/* Table Body */}
@@ -163,18 +163,24 @@ const AuditView: React.FC<AuditViewProps> = ({ items, onFinish, onCancel }) => {
                                             : <Square className="text-gray-600" size={20} />
                                         }
                                     </div>
-                                    <div className={`col-span-4 md:col-span-5 font-mono text-sm font-medium ${item.done ? 'text-gray-500 line-through' : 'text-white'}`}>
-                                        {item.part}
+                                    <div className="col-span-4 md:col-span-5">
+                                         <div className={`font-mono text-sm font-medium ${item.done ? 'text-gray-500 line-through' : 'text-white'}`}>
+                                            {item.part}
+                                         </div>
+                                         {item.description && <div className="text-[10px] text-gray-500 truncate">{item.description}</div>}
                                     </div>
                                     <div className="col-span-3 text-center">
                                         <span className="bg-white/5 border border-white/10 px-2 py-1 rounded text-xs font-mono text-cyan-200">
                                             {item.bin}
                                         </span>
                                     </div>
-                                    <div className="col-span-3 text-center">
+                                    <div className="col-span-3 text-center flex flex-col items-center">
                                         <span className={`text-sm font-bold ${item.done ? 'text-emerald-500' : 'text-gray-400'}`}>
                                             {item.qty}
                                         </span>
+                                        {item.bo > 0 && (
+                                            <span className="text-[9px] text-[#ff003c] font-black">BO: {item.bo}</span>
+                                        )}
                                     </div>
                                 </div>
                             ))}
